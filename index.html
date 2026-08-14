@@ -1,0 +1,658 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ระบบคัดแยกและวิเคราะห์ตู้คอนเทนเนอร์</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body { font-family: 'Prompt', sans-serif; }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col">
+
+    <header class="bg-gradient-to-r from-blue-700 to-indigo-800 text-white shadow-lg sticky top-0 z-40">
+        <div class="max-w-7xl mx-auto px-4 py-4 flex flex-col sm:flex-row justify-between items-center gap-3">
+            <div class="flex items-center space-x-3">
+                <div class="bg-white/15 p-3 rounded-2xl text-2xl backdrop-blur-sm shadow-inner">
+                    <i class="fa-solid fa-boxes-stacked"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl font-bold tracking-wide">ระบบคัดแยกและวิเคราะห์ตู้คอนเทนเนอร์</h1>
+                    <p class="text-xs text-blue-200">Advanced Container & Cargo Dimension Checker UI</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-2 w-full sm:w-auto justify-end">
+                <button onclick="app.openInfoModal()" class="bg-white/10 hover:bg-white/20 text-xs sm:text-sm px-4 py-2.5 rounded-xl transition font-medium flex items-center gap-2 backdrop-blur-sm border border-white/10">
+                    <i class="fa-solid fa-circle-info"></i> คู่มือสเปกตู้
+                </button>
+                <button onclick="app.confirmReset()" class="bg-red-500/20 hover:bg-red-500/30 text-rose-200 hover:text-white text-xs sm:text-sm px-4 py-2.5 rounded-xl transition font-medium flex items-center gap-2 border border-red-500/30">
+                    <i class="fa-solid fa-rotate-right"></i> ล้างข้อมูล
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="flex-grow max-w-7xl w-full mx-auto p-4 sm:p-6 grid grid-cols-1 lg:grid-cols-12 gap-6">
+        
+        <!-- Left Panel: Product Input & List (7 cols) -->
+        <section class="lg:col-span-7 flex flex-col gap-6">
+            
+            <!-- Add Product Form Card -->
+            <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 relative overflow-hidden">
+                <div class="absolute top-0 right-0 w-32 h-32 bg-blue-50 rounded-bl-full pointer-events-none -z-0"></div>
+                <h2 class="text-lg font-semibold text-slate-800 mb-4 flex items-center gap-2 relative z-10">
+                    <span class="bg-blue-100 text-blue-600 p-2 rounded-xl text-sm"><i class="fa-solid fa-square-plus"></i></span> เพิ่มรายการสินค้าเพื่อตรวจสอบ
+                </h2>
+                <form id="productForm" onsubmit="app.addProduct(event)" class="grid grid-cols-1 sm:grid-cols-2 gap-4 relative z-10">
+                    <div class="sm:col-span-2">
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">ชื่อสินค้า / รหัสสินค้า</label>
+                        <input type="text" id="prodName" required placeholder="เช่น เครื่องจักรกล, พาเลทสินค้า A, ตู้คอนโทรล" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">ความกว้างต่อชิ้น (ซม.)</label>
+                        <input type="number" step="0.1" min="0.1" id="prodWidth" required placeholder="0.0" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">ความยาวต่อชิ้น (ซม.)</label>
+                        <input type="number" step="0.1" min="0.1" id="prodLength" required placeholder="0.0" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">ความสูงต่อชิ้น (ซม.)</label>
+                        <input type="number" step="0.1" min="0.1" id="prodHeight" required placeholder="0.0" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">น้ำหนักรวมต่อชิ้น (กก.)</label>
+                        <input type="number" step="0.1" min="0.1" id="prodWeight" required placeholder="0.0" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition">
+                    </div>
+                    <div class="sm:col-span-2">
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">จำนวน (ชิ้น/กล่อง)</label>
+                        <input type="number" min="1" id="prodQty" value="1" required class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition">
+                    </div>
+                    <div class="sm:col-span-2 pt-2">
+                        <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-4 rounded-2xl transition shadow-md shadow-blue-200 flex items-center justify-center gap-2 text-sm">
+                            <i class="fa-solid fa-calculator"></i> คำนวณ
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Product List Table Card -->
+            <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 flex-grow flex flex-col">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-lg font-semibold text-slate-800 flex items-center gap-2">
+                        <span class="bg-indigo-100 text-indigo-600 p-2 rounded-xl text-sm"><i class="fa-solid fa-list-check"></i></span> รายการสินค้าในคลัง (<span id="itemCount">0</span>)
+                    </h2>
+                    <span class="text-xs text-slate-400">คลิกแถวเพื่อเลือกวิเคราะห์ตู้</span>
+                </div>
+                <div class="overflow-x-auto flex-grow">
+                    <table class="w-full text-left text-sm">
+                        <thead class="bg-slate-100/70 text-slate-600 uppercase text-xs tracking-wider">
+                            <tr>
+                                <th class="p-3.5 rounded-l-xl">รายการสินค้า</th>
+                                <th class="p-3.5">มิติ (ก×ย×ส ซม.)</th>
+                                <th class="p-3.5">จำนวน</th>
+                                <th class="p-3.5">CBM / นน.</th>
+                                <th class="p-3.5 rounded-r-xl text-right">จัดการ</th>
+                            </tr>
+                        </thead>
+                        <tbody id="productTableBody" class="divide-y divide-slate-100">
+                            <tr>
+                                <td colspan="5" class="text-center py-12 text-slate-400">
+                                    <i class="fa-solid fa-box-open text-4xl mb-3 text-slate-300 block"></i>
+                                    ยังไม่มีรายการสินค้า กรุณาเพิ่มสินค้าด้านบน
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </section>
+
+        <!-- Right Panel: Summary & Container Analysis (5 cols) -->
+        <section class="lg:col-span-5 flex flex-col gap-6">
+            
+            <!-- Summary Totals Card -->
+            <div class="bg-gradient-to-br from-slate-900 via-blue-950 to-indigo-950 text-white p-6 rounded-3xl shadow-xl relative overflow-hidden">
+                <div class="absolute -bottom-10 -right-10 w-40 h-40 bg-blue-500/10 rounded-full blur-2xl pointer-events-none"></div>
+                <h2 class="text-lg font-semibold mb-4 flex items-center gap-2 text-blue-200">
+                    <i class="fa-solid fa-calculator text-blue-400"></i> สรุปภาพรวมปริมาตรและน้ำหนัก
+                </h2>
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="bg-white/10 p-4 rounded-2xl backdrop-blur-md border border-white/10">
+                        <span class="text-xs text-blue-200 block mb-1">ปริมาตรรวม (CBM)</span>
+                        <span id="totalCbm" class="text-2xl font-bold tracking-tight">0.00</span> <span class="text-xs text-blue-300">ลบ.ม.</span>
+                    </div>
+                    <div class="bg-white/10 p-4 rounded-2xl backdrop-blur-md border border-white/10">
+                        <span class="text-xs text-blue-200 block mb-1">น้ำหนักรวมทั้งหมด</span>
+                        <span id="totalWeight" class="text-2xl font-bold tracking-tight">0.00</span> <span class="text-xs text-blue-300">กก.</span>
+                    </div>
+                </div>
+            </div>
+
+        </section>
+
+    </main>
+
+    <section class="max-w-7xl w-full mx-auto px-4 sm:px-6 pb-12">
+        <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-2">
+                <h2 class="text-lg font-semibold text-slate-800 flex items-center gap-2">
+                    <span class="bg-emerald-100 text-emerald-600 p-2 rounded-xl text-sm"><i class="fa-solid fa-truck-ramp-box"></i></span> ผลวิเคราะห์การเลือกตู้คอนเทนเนอร์
+                </h2>
+                <div id="activeFocusIndicator" class="text-xs bg-blue-50 text-blue-700 font-medium px-3.5 py-1.5 rounded-full border border-blue-100 flex items-center gap-2">
+                    <i class="fa-solid fa-layer-group"></i> กำลังวิเคราะห์: <span id="focusTargetName" class="font-bold">สินค้าทั้งหมดในคลังรวมกัน</span>
+                    <button onclick="app.clearFocus()" id="clearFocusBtn" class="hidden text-blue-400 hover:text-blue-600 ml-1 font-bold">×</button>
+                </div>
+            </div>
+            <p class="text-xs text-slate-500 mb-6">คำแนะนำ: คลิกที่รายการสินค้าในตารางด้านบนเพื่อดูผลการรองรับตู้เฉพาะสินค้ารายชิ้นนั้นๆ ได้ทันที</p>
+            <div id="containerResults" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="col-span-full text-center py-12 text-slate-400">
+                    <i class="fa-solid fa-boxes-packing text-4xl mb-3 text-slate-300 block"></i>
+                    <p class="text-sm">กรุณากรอกข้อมูลสินค้าเพื่อทำการวิเคราะห์ตู้ที่เหมาะสมที่สุด</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Custom General Modal / Popup -->
+    <div id="customModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center hidden z-50 p-4 transition-all">
+        <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl transform transition-all scale-100 border border-slate-100">
+            <div id="modalIcon" class="text-3xl mb-3 text-blue-600"></div>
+            <h3 id="modalTitle" class="text-lg font-bold text-slate-800 mb-1">แจ้งเตือน</h3>
+            <p id="modalMessage" class="text-sm text-slate-600 mb-6 leading-relaxed"></p>
+            <div class="flex justify-end gap-2">
+                <button id="modalCancelBtn" onclick="app.closeModal()" class="hidden bg-slate-100 hover:bg-slate-200 text-slate-700 px-5 py-2.5 rounded-xl text-sm font-medium transition">ยกเลิก</button>
+                <button id="modalConfirmBtn" onclick="app.closeModal()" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-xl text-sm font-medium transition shadow-sm">ตกลง</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Container Specifications Modal -->
+    <div id="infoModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center hidden z-50 p-4 transition-all">
+        <div class="bg-white rounded-3xl max-w-2xl w-full p-6 sm:p-8 shadow-2xl max-h-[90vh] flex flex-col border border-slate-100">
+            <div class="flex justify-between items-center mb-4 pb-2 border-b border-slate-100">
+                <h3 class="text-lg font-bold text-slate-800 flex items-center gap-2">
+                    <i class="fa-solid fa-circle-info text-blue-600"></i> คู่มือเลือกตู้คอนเทนเนอร์ (ฉบับเข้าใจง่าย)
+                </h3>
+                <button onclick="app.closeInfoModal()" class="text-slate-400 hover:text-slate-600 p-2 rounded-xl transition">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+            <div class="space-y-3 overflow-y-auto pr-2 text-xs sm:text-sm text-slate-600 flex-grow">
+                <div class="p-3.5 bg-slate-50 rounded-2xl border border-slate-100">
+                    <span class="font-bold text-slate-800 block mb-0.5">📦 ตู้ 20 ฟุต มาตรฐาน (20GP)</span>
+                    <span class="text-slate-500">เหมาะกับสินค้าทั่วไปและพาเลทที่มีน้ำหนักมาก แต่ความยาวไม่เกิน 5.8 เมตร</span>
+                </div>
+                <div class="p-3.5 bg-slate-50 rounded-2xl border border-slate-100">
+                    <span class="font-bold text-slate-800 block mb-0.5">📦 ตู้ 40 ฟุต มาตรฐาน (40GP)</span>
+                    <span class="text-slate-500">เหมาะกับสินค้าทั่วไปจำนวนมาก ยาวได้ถึง 12 เมตร แต่ความสูงไม่เกิน 2.39 เมตร</span>
+                </div>
+                <div class="p-3.5 bg-slate-50 rounded-2xl border border-slate-100">
+                    <span class="font-bold text-slate-800 block mb-0.5">🏢 ตู้ 40 ฟุต ทรงสูงพิเศษ (40HC) - ยอดนิยม</span>
+                    <span class="text-slate-500">เหมาะกับสินค้าที่สูงกว่าปกติหรือต้องการพื้นที่จุเยอะเป็นพิเศษ สูงถึง 2.69 เมตร</span>
+                </div>
+                <div class="p-3.5 bg-blue-50/70 rounded-2xl border border-blue-100">
+                    <span class="font-bold text-blue-950 block mb-0.5">🚚 ตู้เปิดประทุนด้านบน (20OT / 40OT)</span>
+                    <span class="text-slate-500">เหมาะกับเครื่องจักรหรือสินค้าที่มีความสูงพ้นหลังคาตู้ สามารถเปิดผ้าใบยกของหย่อนจากด้านบนได้</span>
+                </div>
+                <div class="p-3.5 bg-amber-50/70 rounded-2xl border border-amber-100">
+                    <span class="font-bold text-amber-950 block mb-0.5">🏗️ ตู้พื้นราบไร้ผนัง (20FR / 40FR)</span>
+                    <span class="text-slate-500">เหมาะกับเครื่องจักรหนักมากหรือสินค้าโครงสร้างใหญ่โต กว้างยาวเกินตู้ทั่วไป ไม่มีหลังคาและผนังข้าง</span>
+                </div>
+            </div>
+            <div class="mt-5 pt-3 border-t border-slate-100 flex justify-end">
+                <button onclick="app.closeInfoModal()" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-xl text-sm font-medium transition">เข้าใจแล้ว</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Product Compatibility Detail Modal -->
+    <div id="productDetailModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center hidden z-50 p-4 transition-all">
+        <div class="bg-white rounded-3xl max-w-xl w-full p-6 sm:p-8 shadow-2xl max-h-[90vh] flex flex-col border border-slate-100">
+            <div class="flex justify-between items-center mb-4 pb-2 border-b border-slate-100">
+                <h3 class="text-lg font-bold text-slate-800 flex items-center gap-2">
+                    <i class="fa-solid fa-square-poll-vertical text-blue-600"></i> ตู้ที่รองรับสินค้ารายชิ้นนี้
+                </h3>
+                <button onclick="app.closeProductDetailModal()" class="text-slate-400 hover:text-slate-600 p-2 rounded-xl transition">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+            <div id="productDetailContent" class="space-y-3 overflow-y-auto pr-2 flex-grow">
+                <!-- Dynamic content -->
+            </div>
+            <div class="mt-5 pt-3 border-t border-slate-100 flex justify-end">
+                <button onclick="app.closeProductDetailModal()" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-xl text-sm font-medium transition">ปิดหน้าต่าง</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Container Specifications with Exact Internal Dimensions (cm), Max Payload (kg), and Max CBM
+        const CONTAINER_SPECS = [
+            {
+                type: "20GP",
+                name: "20' Standard",
+                fullName: "ตู้ 20 ฟุต มาตรฐาน",
+                width: 235, length: 589, height: 239,
+                maxCbm: 33.0, maxWeight: 28200, safeUtilRate: 0.85,
+                isOpenTop: false, isFlatRack: false
+            },
+            {
+                type: "40GP",
+                name: "40' Standard",
+                fullName: "ตู้ 40 ฟุต มาตรฐาน",
+                width: 235, length: 1203, height: 239,
+                maxCbm: 67.5, maxWeight: 28800, safeUtilRate: 0.85,
+                isOpenTop: false, isFlatRack: false
+            },
+            {
+                type: "40HC",
+                name: "40' High Cube",
+                fullName: "ตู้ 40 ฟุต ทรงสูง",
+                width: 235, length: 1203, height: 269,
+                maxCbm: 76.0, maxWeight: 28600, safeUtilRate: 0.85,
+                isOpenTop: false, isFlatRack: false
+            },
+            {
+                type: "20OT",
+                name: "20' Open Top",
+                fullName: "ตู้ 20 ฟุต เปิดประทุน",
+                width: 234, length: 589, height: 234,
+                maxCbm: 32.0, maxWeight: 28100, safeUtilRate: 0.85,
+                isOpenTop: true, isFlatRack: false
+            },
+            {
+                type: "40OT",
+                name: "40' Open Top",
+                fullName: "ตู้ 40 ฟุต เปิดประทุน",
+                width: 234, length: 1203, height: 234,
+                maxCbm: 65.0, maxWeight: 29200, safeUtilRate: 0.85,
+                isOpenTop: true, isFlatRack: false
+            },
+            {
+                type: "20FR",
+                name: "20' Flat Rack",
+                fullName: "ตู้ 20 ฟุต แฟลตแร็ค",
+                width: 223, length: 562, height: 223,
+                maxCbm: 28.0, maxWeight: 30000, safeUtilRate: 0.80,
+                isOpenTop: false, isFlatRack: true
+            },
+            {
+                type: "40FR",
+                name: "40' Flat Rack",
+                fullName: "ตู้ 40 ฟุต แฟลตแร็ค",
+                width: 240, length: 1210, height: 195,
+                maxCbm: 50.0, maxWeight: 39000, safeUtilRate: 0.80,
+                isOpenTop: false, isFlatRack: true
+            }
+        ];
+
+        class ContainerCalculator {
+            constructor() {
+                this.products = [];
+                this.selectedProductId = null; // null means all products combined
+                this.initLoad();
+            }
+
+            initLoad() {
+                const saved = localStorage.getItem('cargo_products_v5');
+                if (saved) {
+                    try { this.products = JSON.parse(saved); } catch (e) { this.products = []; }
+                }
+                this.render();
+            }
+
+            save() {
+                localStorage.setItem('cargo_products_v5', JSON.stringify(this.products));
+                this.render();
+            }
+
+            selectProduct(id) {
+                this.selectedProductId = id;
+                this.render();
+                document.getElementById('containerResults').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }
+
+            clearFocus() {
+                this.selectedProductId = null;
+                this.render();
+            }
+
+            addProduct(e) {
+                e.preventDefault();
+                const name = document.getElementById('prodName').value.trim();
+                const width = parseFloat(document.getElementById('prodWidth').value);
+                const length = parseFloat(document.getElementById('prodLength').value);
+                const height = parseFloat(document.getElementById('prodHeight').value);
+                const weight = parseFloat(document.getElementById('prodWeight').value);
+                const qty = parseInt(document.getElementById('prodQty').value);
+
+                if (!name || isNaN(width) || isNaN(length) || isNaN(height) || isNaN(weight) || isNaN(qty)) {
+                    this.showModal('ข้อมูลไม่ถูกต้อง', 'กรุณากรอกข้อมูลตัวเลขให้ครบถ้วนและถูกต้อง', 'error');
+                    return;
+                }
+
+                const singleCbm = (width * length * height) / 1000000;
+                const totalCbm = singleCbm * qty;
+                const totalWeight = weight * qty;
+
+                const newProduct = {
+                    id: Date.now().toString(),
+                    name, width, length, height, weight, qty,
+                    singleCbm, totalCbm, totalWeight
+                };
+
+                this.products.push(newProduct);
+                this.save();
+
+                document.getElementById('productForm').reset();
+                document.getElementById('prodQty').value = '1';
+                this.showModal('สำเร็จ', 'คำนวณและบันทึกรายการสินค้าเรียบร้อยแล้ว', 'success');
+            }
+
+            confirmRemove(id) {
+                this.showModal('ยืนยันการลบ', 'คุณต้องการลบรายการสินค้านี้ออกจากระบบใช่หรือไม่?', 'confirm', () => {
+                    this.products = this.products.filter(p => p.id !== id);
+                    if (this.selectedProductId === id) {
+                        this.selectedProductId = null;
+                    }
+                    this.save();
+                    this.showModal('ลบสำเร็จ', 'ลบรายการสินค้าเรียบร้อยแล้ว', 'success');
+                });
+            }
+
+            confirmReset() {
+                this.showModal('ยืนยันการล้างข้อมูล', 'คุณต้องการล้างรายการสินค้าทั้งหมดใช่หรือไม่?', 'confirm', () => {
+                    this.products = [];
+                    this.selectedProductId = null;
+                    this.save();
+                    this.showModal('รีเซ็ตสำเร็จ', 'ล้างข้อมูลรายการสินค้าทั้งหมดแล้ว', 'success');
+                });
+            }
+
+            showModal(title, message, type = 'success', onConfirm = null) {
+                const modal = document.getElementById('customModal');
+                document.getElementById('modalTitle').innerText = title;
+                document.getElementById('modalMessage').innerText = message;
+                
+                const icon = document.getElementById('modalIcon');
+                const cancelBtn = document.getElementById('modalCancelBtn');
+                const confirmBtn = document.getElementById('modalConfirmBtn');
+
+                if (type === 'error') {
+                    icon.innerHTML = '<i class="fa-solid fa-circle-exclamation text-rose-500"></i>';
+                    cancelBtn.classList.add('hidden');
+                    confirmBtn.onclick = () => this.closeModal();
+                } else if (type === 'confirm') {
+                    icon.innerHTML = '<i class="fa-solid fa-triangle-exclamation text-amber-500"></i>';
+                    cancelBtn.classList.remove('hidden');
+                    confirmBtn.onclick = () => {
+                        this.closeModal();
+                        if (onConfirm) onConfirm();
+                    };
+                } else {
+                    icon.innerHTML = '<i class="fa-solid fa-circle-check text-emerald-500"></i>';
+                    cancelBtn.classList.add('hidden');
+                    confirmBtn.onclick = () => this.closeModal();
+                }
+                modal.classList.remove('hidden');
+            }
+
+            closeModal() {
+                document.getElementById('customModal').classList.add('hidden');
+            }
+
+            openInfoModal() {
+                document.getElementById('infoModal').classList.remove('hidden');
+            }
+
+            closeInfoModal() {
+                document.getElementById('infoModal').classList.add('hidden');
+            }
+
+            openProductDetailModal(id) {
+                this.selectProduct(id);
+            }
+
+            closeProductDetailModal() {
+                document.getElementById('productDetailModal').classList.add('hidden');
+            }
+
+            render() {
+                const tbody = document.getElementById('productTableBody');
+                document.getElementById('itemCount').innerText = this.products.length;
+
+                const focusTargetName = document.getElementById('focusTargetName');
+                const clearFocusBtn = document.getElementById('clearFocusBtn');
+                if (this.selectedProductId) {
+                    const selProd = this.products.find(p => p.id === this.selectedProductId);
+                    if (selProd) {
+                        focusTargetName.innerText = `ชิ้นงาน: "${selProd.name}" (${selProd.width}×${selProd.length}×${selProd.height} ซม.)`;
+                        clearFocusBtn.classList.remove('hidden');
+                    } else {
+                        this.selectedProductId = null;
+                        focusTargetName.innerText = "สินค้าทั้งหมดในคลังรวมกัน";
+                        clearFocusBtn.classList.add('hidden');
+                    }
+                } else {
+                    focusTargetName.innerText = "สินค้าทั้งหมดในคลังรวมกัน";
+                    clearFocusBtn.classList.add('hidden');
+                }
+
+                if (this.products.length === 0) {
+                    tbody.innerHTML = `
+                        <tr>
+                            <td colspan="5" class="text-center py-12 text-slate-400">
+                                <i class="fa-solid fa-box-open text-4xl mb-3 text-slate-300 block"></i>
+                                ยังไม่มีรายการสินค้า กรุณาเพิ่มสินค้าด้านบน
+                            </td>
+                        </tr>
+                    `;
+                } else {
+                    tbody.innerHTML = this.products.map(p => {
+                        const isSelected = this.selectedProductId === p.id;
+                        return `
+                            <tr class="hover:bg-slate-50/80 transition cursor-pointer ${isSelected ? 'bg-blue-50/60 font-semibold' : ''}" onclick="app.selectProduct('${p.id}')" title="คลิกเพื่อเลือกวิเคราะห์ตู้เฉพาะสินค้านี้">
+                                <td class="p-3.5 text-slate-700">
+                                    ${p.name}
+                                    ${isSelected ? '<span class="block text-xs text-blue-600 font-bold"><i class="fa-solid fa-circle-check"></i> กำลังวิเคราะห์ชิ้นนี้</span>' : '<span class="block text-xs text-slate-400 font-normal"><i class="fa-solid fa-hand-pointer"></i> คลิกเพื่อวิเคราะห์</span>'}
+                                </td>
+                                <td class="p-3.5 text-slate-600">${p.width} × ${p.length} × ${p.height} ซม.</td>
+                                <td class="p-3.5 text-slate-600">${p.qty.toLocaleString()}</td>
+                                <td class="p-3.5 text-slate-600">${p.totalCbm.toFixed(3)} CBM<br><span class="text-xs text-slate-400">${p.totalWeight.toLocaleString()} กก.</span></td>
+                                <td class="p-3.5 text-right" onclick="event.stopPropagation()">
+                                    <button onclick="app.confirmRemove('${p.id}')" class="text-rose-400 hover:text-rose-600 p-2 rounded-xl transition" title="ลบรายการ">
+                                        <i class="fa-solid fa-trash-can"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                        `;
+                    }).join('');
+                }
+
+                let sumCbm = 0;
+                let sumWeight = 0;
+
+                this.products.forEach(p => {
+                    sumCbm += p.totalCbm;
+                    sumWeight += p.totalWeight;
+                });
+
+                document.getElementById('totalCbm').innerText = sumCbm.toFixed(2);
+                document.getElementById('totalWeight').innerText = sumWeight.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+
+                const containerResults = document.getElementById('containerResults');
+                if (this.products.length === 0) {
+                    containerResults.innerHTML = `
+                        <div class="col-span-full text-center py-12 text-slate-400">
+                            <i class="fa-solid fa-boxes-packing text-4xl mb-3 text-slate-300 block"></i>
+                            <p class="text-sm">กรุณากรอกข้อมูลสินค้าเพื่อทำการวิเคราะห์ตู้ที่เหมาะสมที่สุด</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                let html = '';
+
+                if (this.selectedProductId) {
+                    const p = this.products.find(item => item.id === this.selectedProductId);
+                    if (!p) return;
+
+                    CONTAINER_SPECS.forEach(c => {
+                        let fitsDirect = false;
+                        let fitsRotated = false;
+
+                        if (c.isFlatRack) {
+                            fitsDirect = (p.width <= c.width * 1.3 && p.length <= c.length * 1.3);
+                            fitsRotated = (p.width <= c.length * 1.3 && p.length <= c.width * 1.3);
+                        } else if (c.isOpenTop) {
+                            fitsDirect = (p.width <= c.width && p.length <= c.length);
+                            fitsRotated = (p.width <= c.length && p.length <= c.width);
+                        } else {
+                            fitsDirect = (p.width <= c.width && p.length <= c.length && p.height <= c.height);
+                            fitsRotated = (p.width <= c.length && p.length <= c.width && p.height <= c.height);
+                        }
+
+                        const canFitWeight = p.weight <= c.maxWeight;
+                        const isValid = (fitsDirect || fitsRotated) && canFitWeight;
+
+                        if (isValid) {
+                            html += `
+                                <div class="border border-emerald-200 bg-emerald-50/60 rounded-2xl p-4 shadow-2xs flex flex-col gap-2">
+                                    <div class="flex flex-wrap justify-between items-center gap-1">
+                                        <div class="flex items-center gap-2">
+                                            <span class="w-3 h-3 rounded-full bg-emerald-500 inline-block flex-shrink-0"></span>
+                                            <span class="font-bold text-emerald-900 text-xs sm:text-sm truncate">${c.name} (${c.fullName})</span>
+                                        </div>
+                                        <span class="bg-emerald-200 text-emerald-800 text-[11px] font-bold px-2.5 py-1 rounded-xl whitespace-nowrap">รองรับสินค้านี้</span>
+                                    </div>
+                                    <div class="text-[11px] sm:text-xs text-slate-600 flex flex-wrap gap-x-4 gap-y-1 pt-1 border-t border-emerald-200/60">
+                                        <div class="whitespace-nowrap"><i class="fa-solid fa-ruler-combined text-emerald-600"></i> ตู้: ${c.width}×${c.length}×${c.height} ซม.</div>
+                                        <div class="whitespace-nowrap"><i class="fa-solid fa-weight-scale text-emerald-600"></i> นน. สูงสุด: ${c.maxWeight.toLocaleString()} กก.</div>
+                                    </div>
+                                    <div class="text-[11px] text-emerald-800 font-medium pt-0.5 truncate">
+                                        <i class="fa-solid fa-circle-check"></i> สินค้าขนาด ${p.width}×${p.length}×${p.height} ซม. (${p.weight} กก.) บรรจุได้พอดี
+                                    </div>
+                                </div>
+                            `;
+                        } else {
+                            let reason = [];
+                            if (!fitsDirect && !fitsRotated) reason.push('มิติสินค้าเกินขนาดตู้');
+                            if (!canFitWeight) reason.push('น้ำหนักเกินพิกัด');
+
+                            html += `
+                                <div class="border border-rose-200 bg-rose-50/60 rounded-2xl p-4 shadow-2xs flex flex-col gap-2">
+                                    <div class="flex flex-wrap justify-between items-center gap-1">
+                                        <div class="flex items-center gap-2">
+                                            <span class="w-3 h-3 rounded-full bg-rose-500 inline-block flex-shrink-0"></span>
+                                            <span class="font-bold text-rose-950 text-xs sm:text-sm truncate">${c.name} (${c.fullName})</span>
+                                        </div>
+                                        <span class="bg-rose-200 text-rose-900 text-[11px] font-bold px-2.5 py-1 rounded-xl whitespace-nowrap">ไม่รองรับ</span>
+                                    </div>
+                                    <div class="text-[11px] sm:text-xs text-slate-600 flex flex-wrap gap-x-4 gap-y-1 pt-1 border-t border-rose-200/60">
+                                        <div class="whitespace-nowrap"><i class="fa-solid fa-ruler-combined text-rose-600"></i> ตู้: ${c.width}×${c.length}×${c.height} ซม.</div>
+                                        <div class="whitespace-nowrap"><i class="fa-solid fa-weight-scale text-rose-600"></i> นน. สูงสุด: ${c.maxWeight.toLocaleString()} กก.</div>
+                                    </div>
+                                    <div class="text-[11px] text-rose-700 font-medium pt-0.5 truncate">
+                                        <i class="fa-solid fa-triangle-exclamation"></i> สาเหตุ: ${reason.join(' | ')}
+                                    </div>
+                                </div>
+                            `;
+                        }
+                    });
+
+                } else {
+                    CONTAINER_SPECS.forEach(c => {
+                        let canFitAllItems = true;
+                        let failingReasons = [];
+
+                        this.products.forEach(p => {
+                            let fitsDirect = false;
+                            let fitsRotated = false;
+
+                            if (c.isFlatRack) {
+                                fitsDirect = (p.width <= c.width * 1.3 && p.length <= c.length * 1.3);
+                                fitsRotated = (p.width <= c.length * 1.3 && p.length <= c.width * 1.3);
+                            } else if (c.isOpenTop) {
+                                fitsDirect = (p.width <= c.width && p.length <= c.length);
+                                fitsRotated = (p.width <= c.length && p.length <= c.width);
+                            } else {
+                                fitsDirect = (p.width <= c.width && p.length <= c.length && p.height <= c.height);
+                                fitsRotated = (p.width <= c.length && p.length <= c.width && p.height <= c.height);
+                            }
+                            
+                            if (!fitsDirect && !fitsRotated) {
+                                canFitAllItems = false;
+                                failingReasons.push(`สินค้า "${p.name}" มิติเกิน`);
+                            }
+                        });
+
+                        let exceedsWeightLimit = sumWeight > c.maxWeight;
+                        if (exceedsWeightLimit) {
+                            canFitAllItems = false;
+                            failingReasons.push(`นน. รวมเกินพิกัดตู้`);
+                        }
+
+                        const usableCbm = c.maxCbm * c.safeUtilRate;
+                        const containerByVolume = Math.ceil(sumCbm / usableCbm);
+                        const containerByWeight = Math.ceil(sumWeight / c.maxWeight);
+                        const recommendedCount = Math.max(containerByVolume, containerByWeight, 1);
+                        const volumeUsagePercent = Math.min(Math.round((sumCbm / c.maxCbm) * 100), 100);
+
+                        if (canFitAllItems) {
+                            html += `
+                                <div class="border border-emerald-200 bg-emerald-50/60 rounded-2xl p-4 shadow-2xs flex flex-col gap-2">
+                                    <div class="flex flex-wrap justify-between items-center gap-1">
+                                        <div class="flex items-center gap-2">
+                                            <span class="w-3 h-3 rounded-full bg-emerald-500 inline-block flex-shrink-0"></span>
+                                            <span class="font-bold text-emerald-900 text-xs sm:text-sm truncate">${c.name} (${c.fullName})</span>
+                                        </div>
+                                        <span class="bg-emerald-200 text-emerald-800 text-[11px] font-bold px-2.5 py-1 rounded-xl whitespace-nowrap">รองรับ (${recommendedCount} ตู้)</span>
+                                    </div>
+                                    <div class="text-[11px] sm:text-xs text-slate-600 flex flex-wrap gap-x-4 gap-y-1 pt-1 border-t border-emerald-200/60">
+                                        <div class="whitespace-nowrap"><i class="fa-solid fa-ruler-combined text-emerald-600"></i> ตู้: ${c.width}×${c.length}×${c.height} ซม.</div>
+                                        <div class="whitespace-nowrap"><i class="fa-solid fa-weight-scale text-emerald-600"></i> นน. สูงสุด: ${c.maxWeight.toLocaleString()} กก.</div>
+                                    </div>
+                                    <div class="flex items-center gap-3 pt-1">
+                                        <div class="w-full bg-emerald-200/50 h-2 rounded-full overflow-hidden flex-grow">
+                                            <div class="bg-emerald-600 h-full rounded-full" style="width: ${volumeUsagePercent}%"></div>
+                                        </div>
+                                        <span class="text-[11px] text-emerald-800 font-semibold whitespace-nowrap">ใช้ ${volumeUsagePercent}%</span>
+                                    </div>
+                                </div>
+                            `;
+                        } else {
+                            html += `
+                                <div class="border border-rose-200 bg-rose-50/60 rounded-2xl p-4 shadow-2xs flex flex-col gap-2">
+                                    <div class="flex flex-wrap justify-between items-center gap-1">
+                                        <div class="flex items-center gap-2">
+                                            <span class="w-3 h-3 rounded-full bg-rose-500 inline-block flex-shrink-0"></span>
+                                            <span class="font-bold text-rose-950 text-xs sm:text-sm truncate">${c.name} (${c.fullName})</span>
+                                        </div>
+                                        <span class="bg-rose-200 text-rose-900 text-[11px] font-bold px-2.5 py-1 rounded-xl whitespace-nowrap">ไม่รองรับ</span>
+                                    </div>
+                                    <div class="text-[11px] sm:text-xs text-slate-600 flex flex-wrap gap-x-4 gap-y-1 pt-1 border-t border-rose-200/60">
+                                        <div class="whitespace-nowrap"><i class="fa-solid fa-ruler-combined text-rose-600"></i> ตู้: ${c.width}×${c.length}×${c.height} ซม.</div>
+                                        <div class="whitespace-nowrap"><i class="fa-solid fa-weight-scale text-rose-600"></i> นน. สูงสุด: ${c.maxWeight.toLocaleString()} กก.</div>
+                                    </div>
+                                    <div class="text-[11px] text-rose-700 font-medium pt-0.5 truncate">
+                                        <i class="fa-solid fa-triangle-exclamation"></i> สาเหตุ: ${failingReasons.join(' | ')}
+                                    </div>
+                                </div>
+                            `;
+                        }
+                    });
+                }
+
+                containerResults.innerHTML = html;
+            }
+        }
+
+        const app = new ContainerCalculator();
+    </script>
+</body>
+</html>
